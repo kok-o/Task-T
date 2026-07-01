@@ -1,0 +1,147 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 24 27% 98%; /* #FCFAFA - lighter and softer */
+    --foreground: 240 10% 20%; 
+    --card: 0 0% 100%; /* #FFFFFF */
+    --card-foreground: 240 10% 20%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 240 10% 20%;
+    --primary: 349 49% 70%; /* #D98C9A */
+    --primary-foreground: 0 0% 100%;
+    --secondary: 24 27% 95%; /* Softer secondary */
+    --secondary-foreground: 240 5.9% 10%;
+    --muted: 24 27% 95%;
+    --muted-foreground: 240 3.8% 46.1%;
+    --accent: 24 27% 95%;
+    --accent-foreground: 240 5.9% 10%;
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 21 29% 92%; /* #F0E8E4 - Even softer border */
+    --input: 21 29% 92%;
+    --ring: 349 49% 70%;
+    --radius: 1.5rem; /* 24px for larger rounded cards */
+  }
+
+  .dark {
+    --background: 240 10% 5%;
+    --foreground: 0 0% 98%;
+    --card: 240 10% 7%;
+    --card-foreground: 0 0% 98%;
+    --popover: 240 10% 7%;
+    --popover-foreground: 0 0% 98%;
+    --primary: 349 49% 70%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 240 3.7% 15.9%;
+    --secondary-foreground: 0 0% 98%;
+    --muted: 240 3.7% 15.9%;
+    --muted-foreground: 240 5% 64.9%;
+    --accent: 240 3.7% 15.9%;
+    --accent-foreground: 0 0% 98%;
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 240 3.7% 15.9%;
+    --input: 240 3.7% 15.9%;
+    --ring: 349 49% 70%;
+  }
+
+  body {
+    @apply bg-background text-foreground font-sans antialiased selection:bg-primary/20 selection:text-primary;
+  }
+
+  html {
+    scroll-behavior: smooth;
+    -webkit-tap-highlight-color: transparent;
+  }
+}
+
+@layer components {
+  /* ─── Calendar Overrides ─────────────────────────────────────────────────── */
+  .rbc-calendar {
+    @apply font-sans;
+  }
+
+  .rbc-header {
+    @apply text-sm font-medium text-muted-foreground py-2 border-border;
+  }
+
+  .rbc-time-view {
+    @apply border border-border rounded-lg overflow-hidden;
+  }
+
+  .rbc-time-header {
+    @apply border-b border-border;
+  }
+
+  .rbc-time-content {
+    @apply border-border;
+  }
+
+  .rbc-time-slot {
+    @apply border-border;
+  }
+
+  .rbc-today {
+    @apply bg-primary/5;
+  }
+
+  .rbc-event {
+    @apply rounded-md text-xs font-medium shadow-sm transition-colors overflow-hidden;
+    /* Делаем прозрачную рамку, чтобы карточка визуально чуть отступала от всех краев ячейки (и слева, и справа), сохраняя поддержку пересекающихся событий */
+    border: 2px solid transparent !important;
+    background-clip: padding-box !important;
+  }
+
+  .rbc-event-content {
+    @apply break-words whitespace-normal leading-tight;
+  }
+
+  .rbc-event.rbc-selected {
+    @apply ring-2 ring-white ring-offset-1;
+  }
+
+  .rbc-slot-selection {
+    @apply bg-primary/20 border border-primary/50 rounded;
+  }
+
+  .rbc-current-time-indicator {
+    @apply bg-primary h-0.5;
+  }
+
+  /* ─── Scrollbar ──────────────────────────────────────────────────────────── */
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  ::-webkit-scrollbar-track {
+    @apply bg-transparent;
+  }
+  ::-webkit-scrollbar-thumb {
+    @apply bg-border rounded-full;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    @apply bg-muted-foreground/30;
+  }
+}
+
+@layer utilities {
+  .animate-fade-in {
+    animation: fade-in 0.3s ease-out;
+  }
+
+  @keyframes fade-in {
+    from { opacity: 0; transform: translateY(8px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  .glass {
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    background: hsla(var(--card), 0.8);
+    border: 1px solid hsla(var(--border), 0.5);
+  }
+}

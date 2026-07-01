@@ -1,0 +1,202 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ─────────────────────────────────────────
+// ENUMS
+// ─────────────────────────────────────────
+
+enum Role {
+  OWNER
+  MASTER
+}
+
+enum AppointmentStatus {
+  PENDING
+  CONFIRMED
+  CANCELLED
+  COMPLETED
+  NO_SHOW
+}
+
+enum CancelledBy {
+  CLIENT
+  MASTER
+  OWNER
+}
+
+enum NotificationChannel {
+  EMAIL
+  TELEGRAM
+  SMS
+  WHATSAPP
+}
+
+enum NotificationStatus {
+  PENDING
+  SENT
+  FAILED
+}
+
+enum NotificationRecipient {
+  CLIENT
+  MASTER
+}
+
+// ─────────────────────────────────────────
+// MODELS
+// ─────────────────────────────────────────
+
+model User {
+  id           String   @id @default(uuid())
+  email        String   @unique
+  passwordHash String   @map("password_hash")
+  role         Role     @default(MASTER)
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  master        Master?
+  refreshTokens RefreshToken[]
+
+  @@map("users")
+}
+
+model RefreshToken {
+  id        String   @id @default(uuid())
+  token     String   @unique
+  userId    String   @map("user_id")
+  expiresAt DateTime @map("expires_at")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("refresh_tokens")
+}
+
+model Master {
+  id             String   @id @default(uuid())
+  userId         String?  @unique @map("user_id")
+  name           String
+  phone          String?
+  telegramChatId String?  @map("telegram_chat_id")
+  color          String   @default("#FF6B9D") // HEX color for calendar
+  isActive       Boolean  @default(true) @map("is_active")
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
+
+  user          User?          @relation(fields: [userId], references: [id], onDelete: SetNull)
+  appointments  Appointment[]
+  workSchedules WorkSchedule[]
+  dayOffs       DayOff[]
+
+  @@map("masters")
+}
+
+model Service {
+  id              String   @id @default(uuid())
+  name            String
+  durationMinutes Int      @map("duration_minutes")
+  price           Decimal  @db.Decimal(10, 2)
+  isActive        Boolean  @default(true) @map("is_active")
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+
+  appointments Appointment[]
+
+  @@map("services")
+}
+
+model Client {
+  id             String   @id @default(uuid())
+  name           String
+  phone          String   @unique
+  email          String?
+  telegramChatId String?  @map("telegram_chat_id")
+  notes          String?
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
+
+  appointments Appointment[]
+
+  @@map("clients")
+}
+
+/// Weekly work schedule for a master (e.g. Mon 09:00–19:00)
+model WorkSchedule {
+  id          String   @id @default(uuid())
+  masterId    String   @map("master_id")
+  dayOfWeek   Int      @map("day_of_week") // 0=Sun, 1=Mon ... 6=Sat
+  startTime   String   @map("start_time") // "09:00"
+  endTime     String   @map("end_time")   // "19:00"
+  isDayOff    Boolean  @default(false) @map("is_day_off")
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  master Master @relation(fields: [masterId], references: [id], onDelete: Cascade)
+
+  @@unique([masterId, dayOfWeek])
+  @@map("work_schedules")
+}
+
+/// One-off day offs (vacations, sick days, etc.)
+model DayOff {
+  id        String   @id @default(uuid())
+  masterId  String   @map("master_id")
+  date      DateTime @db.Date
+  reason    String?
+  createdAt DateTime @default(now()) @map("created_at")
+
+  master Master @relation(fields: [masterId], references: [id], onDelete: Cascade)
+
+  @@unique([masterId, date])
+  @@map("day_offs")
+}
+
+/// Core entity: a booked appointment
+model Appointment {
+  id           String            @id @default(uuid())
+  masterId     String            @map("master_id")
+  clientId     String            @map("client_id")
+  serviceId    String            @map("service_id")
+  startsAt     DateTime          @map("starts_at") // UTC
+  endsAt       DateTime          @map("ends_at")   // UTC, computed = startsAt + duration
+  status       AppointmentStatus @default(CONFIRMED)
+  notes        String?
+  cancelledBy  CancelledBy?      @map("cancelled_by")
+  cancelReason String?           @map("cancel_reason")
+  createdAt    DateTime          @default(now()) @map("created_at")
+  updatedAt    DateTime          @updatedAt @map("updated_at")
+
+  master        Master         @relation(fields: [masterId], references: [id])
+  client        Client         @relation(fields: [clientId], references: [id])
+  service       Service        @relation(fields: [serviceId], references: [id])
+  notifications Notification[]
+
+  // Prevent double-booking: no two active appointments for same master can overlap
+  @@index([masterId, startsAt, endsAt])
+  @@map("appointments")
+}
+
+/// Log of all sent/pending notifications
+model Notification {
+  id             String                @id @default(uuid())
+  appointmentId  String                @map("appointment_id")
+  recipientType  NotificationRecipient @map("recipient_type")
+  channel        NotificationChannel
+  scheduledAt    DateTime              @map("scheduled_at")
+  sentAt         DateTime?             @map("sent_at")
+  status         NotificationStatus    @default(PENDING)
+  message        String
+  createdAt      DateTime              @default(now()) @map("created_at")
+
+  appointment Appointment @relation(fields: [appointmentId], references: [id], onDelete: Cascade)
+
+  @@map("notifications")
+}

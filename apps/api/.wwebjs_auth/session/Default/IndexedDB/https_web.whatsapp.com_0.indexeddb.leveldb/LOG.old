@@ -1,0 +1,24 @@
+2026/07/01-15:05:55.825 57b8 Reusing MANIFEST C:\Users\esenb\Desktop\Test_T\apps\api\.wwebjs_auth\session\Default\IndexedDB\https_web.whatsapp.com_0.indexeddb.leveldb/MANIFEST-000001
+2026/07/01-15:05:55.825 57b8 Recovering log #216
+2026/07/01-15:05:55.874 57b8 Reusing old log C:\Users\esenb\Desktop\Test_T\apps\api\.wwebjs_auth\session\Default\IndexedDB\https_web.whatsapp.com_0.indexeddb.leveldb/000216.log 
+2026/07/01-15:05:59.684 6678 Level-0 table #227: started
+2026/07/01-15:05:59.718 6678 Level-0 table #227: 1071235 bytes OK
+2026/07/01-15:05:59.719 6678 Delete type=0 #216
+2026/07/01-15:05:59.722 6678 Compacting 1@1 + 7@2 files
+2026/07/01-15:05:59.810 6678 Generated table #228@1: 67592 keys, 2208583 bytes
+2026/07/01-15:05:59.910 6678 Generated table #229@1: 84016 keys, 2242362 bytes
+2026/07/01-15:05:59.949 6678 Generated table #230@1: 10569 keys, 2176823 bytes
+2026/07/01-15:05:59.983 6678 Generated table #231@1: 1964 keys, 2147994 bytes
+2026/07/01-15:06:00.027 6678 Generated table #232@1: 2175 keys, 2146580 bytes
+2026/07/01-15:06:00.090 6678 Generated table #233@1: 18891 keys, 2218301 bytes
+2026/07/01-15:06:00.156 6678 Generated table #234@1: 19776 keys, 1673813 bytes
+2026/07/01-15:06:00.156 6678 Compacted 1@1 + 7@2 files => 14814456 bytes
+2026/07/01-15:06:00.157 6678 compacted to: files[ 0 0 7 0 0 0 0 ]
+2026/07/01-15:06:00.158 6678 Delete type=2 #218
+2026/07/01-15:06:00.158 6678 Delete type=2 #219
+2026/07/01-15:06:00.158 6678 Delete type=2 #220
+2026/07/01-15:06:00.158 6678 Delete type=2 #221
+2026/07/01-15:06:00.158 6678 Delete type=2 #222
+2026/07/01-15:06:00.159 6678 Delete type=2 #223
+2026/07/01-15:06:00.159 6678 Delete type=2 #224
+2026/07/01-15:06:00.159 6678 Delete type=2 #227
