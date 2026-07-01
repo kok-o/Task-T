@@ -76,7 +76,7 @@ authRouter.post(
 
       const payload = jwt.verify(
         refreshToken,
-        process.env.JWT_REFRESH_SECRET!
+        process.env.JWT_REFRESH_SECRET || 'secret'
       ) as { userId: string; role: string };
 
       const accessToken = jwt.sign(

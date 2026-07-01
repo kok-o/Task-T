@@ -30,7 +30,7 @@ export function authenticateJWT(
   try {
     const payload = jwt.verify(
       token,
-      process.env.JWT_ACCESS_SECRET!
+      process.env.JWT_ACCESS_SECRET || 'secret'
     ) as AuthPayload;
     req.user = payload;
     next();
