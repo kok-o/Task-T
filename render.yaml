@@ -38,6 +38,10 @@ services:
     env: static
     buildCommand: npm install && npm run build --workspace=apps/web
     staticPublishPath: ./apps/web/dist
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html
     envVars:
       - key: VITE_API_URL
         value: "https://nail-studio-api.onrender.com/api/v1"
