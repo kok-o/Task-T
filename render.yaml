@@ -23,7 +23,7 @@ services:
       - key: JWT_REFRESH_SECRET
         generateValue: true
       - key: FRONTEND_URL
-        value: "https://nail-studio-web.onrender.com"
+        value: "https://nail-studio-web-p44f.onrender.com"
       - key: EMAIL_HOST
         value: smtp.gmail.com
       - key: EMAIL_PORT
