@@ -64,9 +64,7 @@ npm run dev:web   # Frontend на http://localhost:5173
 | Роль     | Email                      | Пароль     |
 |----------|----------------------------|------------|
 | Владелец | owner@nailstudio.com       | owner123   |
-| Мастер   | anna@nailstudio.com        | master123  |
-| Мастер   | maria@nailstudio.com       | master123  |
-| Мастер   | kate@nailstudio.com        | master123  |
+
 
 ## Структура проекта
 
