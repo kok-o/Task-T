@@ -1,14 +1,16 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Plus, Search, Phone, X } from 'lucide-react';
-import { useClients, useCreateClient } from '@/hooks';
+import { useClients, useCreateClient, useDebounce } from '@/hooks';
 import { toast } from 'sonner';
 import { Loader2 } from 'lucide-react';
+import { Skeleton } from '@/components/ui/Skeleton';
 import { formatPhoneNumber } from '@/utils';
 
 export default function ClientsPage() {
   const [search, setSearch] = useState('');
-  const { data: clients = [], isLoading } = useClients(search || undefined);
+  const debouncedSearch = useDebounce(search, 300);
+  const { data: clients = [], isLoading } = useClients(debouncedSearch || undefined);
   const createClient = useCreateClient();
 
   const [showForm, setShowForm] = useState(false);
@@ -155,7 +157,7 @@ export default function ClientsPage() {
         {isLoading ? (
           <div className="p-5 space-y-3">
             {[...Array(5)].map((_, i) => (
-              <div key={i} className="h-14 bg-muted animate-pulse rounded-lg" />
+              <Skeleton key={i} className="h-14 rounded-lg" />
             ))}
           </div>
         ) : clients.length === 0 ? (

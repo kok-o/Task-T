@@ -1,10 +1,21 @@
+import { useMemo, useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { Plus, CheckCircle2, XCircle, Clock, TrendingUp } from 'lucide-react';
-import { useDashboard } from '@/hooks';
+import { Plus, CheckCircle2, XCircle, Clock, TrendingUp, MoreVertical, X } from 'lucide-react';
+import { useDashboard, useCompleteAppointment, useCancelAppointment } from '@/hooks';
 import { StatusBadge } from '@/components/ui/StatusBadge';
 import { MasterAvatar } from '@/components/ui/MasterAvatar';
+import { Skeleton } from '@/components/ui/Skeleton';
 import { formatTime, formatPrice } from '@/utils';
 import { useAuthStore } from '@/store/auth.store';
+
+function formatWaitTime(diffMs: number) {
+  if (diffMs <= 0) return 'прямо сейчас';
+  const mins = Math.floor(diffMs / 60000);
+  if (mins < 60) return `через ${mins} мин`;
+  const hours = Math.floor(mins / 60);
+  const remainingMins = mins % 60;
+  return `через ${hours} ч ${remainingMins} мин`;
+}
 
 function StatCard({
   icon: Icon,
@@ -18,7 +29,7 @@ function StatCard({
   color: string;
 }) {
   return (
-    <div className="bg-card rounded-3xl shadow-sm p-5 sm:p-6 flex items-center gap-4 transition-all duration-300 hover:shadow-md hover:-translate-y-1 border border-border/30">
+    <div className="bg-card rounded-2xl shadow-sm p-5 sm:p-6 flex items-center gap-4 transition-all duration-300 hover:shadow-md hover:-translate-y-1 border border-border/30">
       <div className={`h-11 w-11 rounded-xl flex items-center justify-center ${color}`}>
         <Icon className="h-5 w-5" />
       </div>
@@ -33,14 +44,39 @@ function StatCard({
 export default function DashboardPage() {
   const { data, isLoading, error } = useDashboard();
   const { user } = useAuthStore();
+  const completeAppt = useCompleteAppointment();
+  const cancelAppt = useCancelAppointment();
+  const [nowDate, setNowDate] = useState(new Date());
+
+  useEffect(() => {
+    const timer = setInterval(() => setNowDate(new Date()), 60000);
+    return () => clearInterval(timer);
+  }, []);
+
+  const { upcoming, past } = useMemo(() => {
+    if (!data) return { upcoming: [], past: [] };
+    const now = new Date();
+    return {
+      upcoming: data.appointments.filter(
+        (a: any) => new Date(a.startsAt) > now && a.status === 'CONFIRMED'
+      ).sort((a: any, b: any) => new Date(a.startsAt).getTime() - new Date(b.startsAt).getTime()),
+      past: data.appointments.filter(
+        (a: any) => new Date(a.startsAt) <= now
+      ).sort((a: any, b: any) => new Date(b.startsAt).getTime() - new Date(a.startsAt).getTime())
+    };
+  }, [data]);
 
   if (isLoading) {
     return (
       <div className="space-y-6">
-        <div className="h-8 w-48 bg-muted animate-pulse rounded" />
+        <div className="flex justify-between">
+          <Skeleton className="h-8 w-48" />
+          <Skeleton className="h-10 w-32 rounded-xl" />
+        </div>
+        <Skeleton className="h-48 rounded-[24px] w-full" />
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
           {[...Array(4)].map((_, i) => (
-            <div key={i} className="h-24 bg-muted animate-pulse rounded-xl" />
+            <Skeleton key={i} className="h-24 rounded-2xl" />
           ))}
         </div>
       </div>
@@ -55,18 +91,12 @@ export default function DashboardPage() {
     );
   }
 
-  const now = new Date();
-  const upcoming = data.appointments.filter(
-    (a) => new Date(a.startsAt) > now && a.status === 'CONFIRMED'
-  );
-  const past = data.appointments.filter(
-    (a) => new Date(a.startsAt) <= now
-  );
+  const nextAppointment = upcoming.length > 0 ? upcoming[0] : null;
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-8 pb-10">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">
             Привет{user?.master?.name ? `, ${user.master.name}` : ''}! 👋
@@ -82,15 +112,51 @@ export default function DashboardPage() {
         <Link
           to="/appointments/new"
           id="new-appointment-btn"
-          className="flex items-center gap-2 rounded-xl bg-primary px-5 py-3 text-sm font-semibold text-primary-foreground shadow-sm hover:opacity-90 active:scale-95 transition-all"
+          className="flex items-center justify-center gap-2 rounded-xl bg-primary px-5 py-3 text-sm font-semibold text-primary-foreground shadow-sm hover:opacity-90 active:scale-95 transition-all"
         >
           <Plus className="h-4 w-4" />
           Новая запись
         </Link>
       </div>
 
+      {/* Hero: Next Appointment */}
+      <div className="bg-primary text-primary-foreground rounded-[24px] p-6 sm:p-8 flex flex-col sm:flex-row justify-between items-start sm:items-center relative overflow-hidden shadow-[0_4px_14px_rgba(212,47,98,0.35)]">
+        <div className="relative z-10">
+          <h2 className="text-primary-foreground/80 text-sm uppercase tracking-wider font-semibold mb-2">
+            Следующая запись
+          </h2>
+          {nextAppointment ? (
+            <>
+              <div className="text-4xl sm:text-5xl font-bold mb-2">
+                {formatWaitTime(new Date(nextAppointment.startsAt).getTime() - nowDate.getTime())}
+              </div>
+              <p className="text-primary-foreground/90 text-lg flex items-center gap-2">
+                <span className="font-semibold">{formatTime(nextAppointment.startsAt)}</span>
+                <span>·</span>
+                <span>{nextAppointment.client.name}</span>
+                <span>·</span>
+                <span>{nextAppointment.service.name}</span>
+              </p>
+            </>
+          ) : (
+            <div className="text-2xl font-semibold py-4">На сегодня записей больше нет 🎉</div>
+          )}
+        </div>
+        {nextAppointment && (
+          <Link
+            to={`/appointments/${nextAppointment.id}`}
+            className="mt-6 sm:mt-0 relative z-10 bg-white text-primary px-6 py-3 rounded-xl font-semibold shadow-sm hover:scale-105 transition-transform whitespace-nowrap"
+          >
+            Перейти к записи
+          </Link>
+        )}
+        <div className="absolute -right-10 -bottom-10 opacity-10 pointer-events-none">
+          <Clock className="w-64 h-64" />
+        </div>
+      </div>
+
       {/* Stats */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
         <StatCard
           icon={TrendingUp}
           label="Всего записей"
@@ -117,64 +183,88 @@ export default function DashboardPage() {
         />
       </div>
 
-      {/* Appointments */}
+      {/* Appointments List */}
       <div className="grid lg:grid-cols-2 gap-6">
         {/* Upcoming */}
-        <div className="bg-card rounded-3xl border border-border/50 shadow-sm overflow-hidden">
-          <div className="px-5 py-4 border-b border-border">
-            <h2 className="font-semibold">Предстоящие</h2>
+        <div className="bg-card rounded-2xl border border-border/50 shadow-sm overflow-hidden flex flex-col">
+          <div className="px-5 py-4 border-b border-border/50 bg-muted/20">
+            <h2 className="font-semibold text-lg">Предстоящие</h2>
             <p className="text-xs text-muted-foreground">{upcoming.length} записей</p>
           </div>
-          <div className="divide-y divide-border">
+          <div className="divide-y divide-border/50 flex-1">
             {upcoming.length === 0 && (
-              <p className="px-5 py-6 text-sm text-muted-foreground text-center">
-                Нет предстоящих записей
-              </p>
+              <div className="flex flex-col items-center justify-center p-10 text-muted-foreground">
+                <Clock className="h-10 w-10 mb-3 opacity-20" />
+                <p className="text-sm">Нет предстоящих записей</p>
+              </div>
             )}
             {upcoming.map((a) => (
-              <Link
+              <div
                 key={a.id}
-                to={`/appointments/${a.id}`}
-                className="flex items-center gap-4 px-6 py-4 hover:bg-accent/50 transition-colors"
+                className="group flex items-center gap-4 px-6 py-4 hover:bg-accent/30 transition-colors relative"
               >
                 <div
-                  className="h-10 w-1 rounded-full flex-shrink-0"
+                  className="h-12 w-1 rounded-full flex-shrink-0"
                   style={{ backgroundColor: a.master.color }}
                 />
                 <div className="flex-1 min-w-0">
-                  <p className="font-medium text-sm truncate">{a.client.name}</p>
-                  <p className="text-xs text-muted-foreground truncate">
-                    {a.service.name} · {a.master.name}
+                  <Link to={`/appointments/${a.id}`} className="block hover:underline">
+                    <p className="font-semibold text-sm truncate">{a.client.name}</p>
+                  </Link>
+                  <p className="text-xs text-muted-foreground truncate mt-0.5">
+                    {a.service.name}
                   </p>
                 </div>
-                <div className="text-right flex-shrink-0">
-                  <p className="text-sm font-semibold">{formatTime(a.startsAt)}</p>
-                  <p className="text-xs text-muted-foreground">
-                    {formatPrice(a.service.price)}
-                  </p>
+                
+                <div className="flex items-center gap-3">
+                  <div className="text-right">
+                    <p className="text-sm font-bold">{formatTime(a.startsAt)}</p>
+                    <p className="text-xs text-muted-foreground">{formatPrice(a.service.price)}</p>
+                  </div>
+                  
+                  {/* Quick Actions (visible on hover) */}
+                  <div className="hidden sm:flex opacity-0 group-hover:opacity-100 transition-opacity gap-1 ml-2">
+                    <button
+                      title="Завершить визит"
+                      onClick={(e) => { e.preventDefault(); completeAppt.mutate(a.id); }}
+                      disabled={completeAppt.isPending}
+                      className="p-2 bg-green-100 text-green-600 rounded-lg hover:bg-green-200 transition-colors disabled:opacity-50"
+                    >
+                      <CheckCircle2 className="w-4 h-4" />
+                    </button>
+                    <button
+                      title="Отменить визит"
+                      onClick={(e) => { e.preventDefault(); cancelAppt.mutate({ id: a.id, cancelledBy: 'MASTER' }); }}
+                      disabled={cancelAppt.isPending}
+                      className="p-2 bg-red-100 text-red-600 rounded-lg hover:bg-red-200 transition-colors disabled:opacity-50"
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
+                  </div>
                 </div>
-              </Link>
+              </div>
             ))}
           </div>
         </div>
 
         {/* Past */}
-        <div className="bg-card rounded-3xl border border-border/50 shadow-sm overflow-hidden">
-          <div className="px-6 py-5 border-b border-border/40">
-            <h2 className="font-semibold">Прошедшие сегодня</h2>
+        <div className="bg-card rounded-2xl border border-border/50 shadow-sm overflow-hidden flex flex-col">
+          <div className="px-6 py-4 border-b border-border/50 bg-muted/20">
+            <h2 className="font-semibold text-lg">Прошедшие сегодня</h2>
             <p className="text-xs text-muted-foreground">{past.length} записей</p>
           </div>
-          <div className="divide-y divide-border">
+          <div className="divide-y divide-border/50 flex-1">
             {past.length === 0 && (
-              <p className="px-5 py-6 text-sm text-muted-foreground text-center">
-                Пока нет
-              </p>
+              <div className="flex flex-col items-center justify-center p-10 text-muted-foreground">
+                <CheckCircle2 className="h-10 w-10 mb-3 opacity-20" />
+                <p className="text-sm">Пока нет завершённых</p>
+              </div>
             )}
             {past.map((a) => (
               <Link
                 key={a.id}
                 to={`/appointments/${a.id}`}
-                className="flex items-center gap-4 px-6 py-4 hover:bg-accent/50 transition-colors"
+                className="flex items-center gap-4 px-6 py-4 hover:bg-accent/30 transition-colors"
               >
                 <MasterAvatar
                   name={a.master.name}
@@ -182,12 +272,15 @@ export default function DashboardPage() {
                   size="sm"
                 />
                 <div className="flex-1 min-w-0">
-                  <p className="font-medium text-sm truncate">{a.client.name}</p>
-                  <p className="text-xs text-muted-foreground">
+                  <p className="font-semibold text-sm truncate">{a.client.name}</p>
+                  <p className="text-xs text-muted-foreground mt-0.5">
                     {a.service.name}
                   </p>
                 </div>
-                <StatusBadge status={a.status} />
+                <div className="flex flex-col items-end gap-1">
+                  <p className="text-xs font-medium text-muted-foreground">{formatTime(a.startsAt)}</p>
+                  <StatusBadge status={a.status} />
+                </div>
               </Link>
             ))}
           </div>

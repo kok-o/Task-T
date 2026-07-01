@@ -1,4 +1,6 @@
 import { NavLink, useNavigate } from 'react-router-dom';
+import { useQueryClient } from '@tanstack/react-query';
+import { appointmentsApi, clientsApi, mastersApi } from '@/api';
 import {
   CalendarDays,
   Users,
@@ -24,6 +26,7 @@ const navItems = [
 export function Sidebar() {
   const { user, refreshToken, logout } = useAuthStore();
   const navigate = useNavigate();
+  const qc = useQueryClient();
 
   const handleLogout = async () => {
     if (refreshToken) {
@@ -59,6 +62,15 @@ export function Sidebar() {
             <li key={item.to}>
               <NavLink
                 to={item.to}
+                onMouseEnter={() => {
+                  if (item.to === '/calendar') {
+                    qc.prefetchQuery({ queryKey: ['appointments', undefined], queryFn: () => appointmentsApi.list() });
+                  } else if (item.to === '/clients') {
+                    qc.prefetchQuery({ queryKey: ['clients', undefined], queryFn: () => clientsApi.list() });
+                  } else if (item.to === '/masters') {
+                    qc.prefetchQuery({ queryKey: ['masters'], queryFn: () => mastersApi.list() });
+                  }
+                }}
                 className={({ isActive }) =>
                   cn(
                     'flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-150',

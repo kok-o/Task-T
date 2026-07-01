@@ -1,12 +1,14 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { mastersApi, servicesApi, clientsApi, appointmentsApi, dashboardApi } from '@/api';
 import type { Appointment, Master, Service, Client } from '@/types';
+export { useDebounce } from './useDebounce';
 
 // ─── Masters ──────────────────────────────────────────────────────────────────
 export function useMasters() {
   return useQuery({
     queryKey: ['masters'],
     queryFn: mastersApi.list,
+    staleTime: 5 * 60 * 1000,
   });
 }
 
@@ -72,6 +74,7 @@ export function useSlots(masterId: string, date: string, serviceId: string) {
     queryKey: ['slots', masterId, date, serviceId],
     queryFn: () => mastersApi.getSlots(masterId, date, serviceId),
     enabled: !!masterId && !!date && !!serviceId,
+    staleTime: 10 * 1000,
   });
 }
 
@@ -134,6 +137,7 @@ export function useAppointments(params?: {
     queryKey: ['appointments', params],
     queryFn: () => appointmentsApi.list(params),
     refetchInterval: 30_000, // poll every 30s for real-time feel
+    staleTime: 30 * 1000,
   });
 }
 
@@ -162,7 +166,14 @@ export function useCancelAppointment() {
   return useMutation({
     mutationFn: ({ id, reason, cancelledBy }: { id: string; reason?: string; cancelledBy?: string }) =>
       appointmentsApi.cancel(id, reason, cancelledBy),
-    onSuccess: () => {
+    onMutate: async ({ id }) => {
+      await qc.cancelQueries({ queryKey: ['appointments'] });
+      qc.setQueriesData({ queryKey: ['appointments'] }, (old: any) => {
+        if (!old) return old;
+        return old.map((a: any) => (a.id === id ? { ...a, status: 'CANCELLED' } : a));
+      });
+    },
+    onSettled: () => {
       qc.invalidateQueries({ queryKey: ['appointments'] });
       qc.invalidateQueries({ queryKey: ['dashboard'] });
     },
@@ -173,7 +184,14 @@ export function useCompleteAppointment() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (id: string) => appointmentsApi.complete(id),
-    onSuccess: () => {
+    onMutate: async (id) => {
+      await qc.cancelQueries({ queryKey: ['appointments'] });
+      qc.setQueriesData({ queryKey: ['appointments'] }, (old: any) => {
+        if (!old) return old;
+        return old.map((a: any) => (a.id === id ? { ...a, status: 'COMPLETED' } : a));
+      });
+    },
+    onSettled: () => {
       qc.invalidateQueries({ queryKey: ['appointments'] });
       qc.invalidateQueries({ queryKey: ['dashboard'] });
     },
