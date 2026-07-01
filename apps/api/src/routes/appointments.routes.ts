@@ -83,7 +83,7 @@ appointmentsRouter.get('/', async (req, res, next) => {
 appointmentsRouter.get('/:id', async (req, res, next) => {
   try {
     const appointment = await prisma.appointment.findUnique({
-      where: { id: req.params.id },
+      where: { id: req.params.id as string },
       include: {
         master: true,
         client: true,
@@ -147,7 +147,7 @@ appointmentsRouter.patch(
     try {
       const data = updateAppointmentSchema.parse(req.body);
       const existing = await prisma.appointment.findUnique({
-        where: { id: req.params.id },
+        where: { id: req.params.id as string },
         include: { service: true },
       });
       if (!existing) throw new AppError(404, 'Appointment not found');
@@ -164,7 +164,7 @@ appointmentsRouter.patch(
 
         const service = data.serviceId
           ? await prisma.service.findUnique({ where: { id: data.serviceId } })
-          : existing.service;
+          : (existing as any).service;
         if (!service) throw new AppError(404, 'Service not found');
 
         endsAt = new Date(
@@ -174,17 +174,17 @@ appointmentsRouter.patch(
 
       const updated = await prisma.$transaction(async (tx) => {
         if (data.startsAt || data.masterId) {
-          await checkDoubleBooking(tx, masterId, startsAt, endsAt, req.params.id);
+          await checkDoubleBooking(tx, masterId, startsAt, endsAt, req.params.id as string);
         }
 
         // Invalidate old notifications
         await tx.notification.updateMany({
-          where: { appointmentId: req.params.id, status: 'PENDING' },
+          where: { appointmentId: req.params.id as string, status: 'PENDING' },
           data: { status: 'FAILED' },
         });
 
         return tx.appointment.update({
-          where: { id: req.params.id },
+          where: { id: req.params.id as string },
           data: { ...data, startsAt, endsAt },
           include: { master: true, client: true, service: true },
         });
@@ -213,7 +213,7 @@ appointmentsRouter.post(
         .parse(req.body);
 
       const appointment = await prisma.appointment.update({
-        where: { id: req.params.id },
+        where: { id: req.params.id as string },
         data: {
           status: AppointmentStatus.CANCELLED,
           cancelReason: reason,
@@ -224,7 +224,7 @@ appointmentsRouter.post(
 
       // Cancel pending notifications
       await prisma.notification.updateMany({
-        where: { appointmentId: req.params.id, status: 'PENDING' },
+        where: { appointmentId: req.params.id as string, status: 'PENDING' },
         data: { status: 'FAILED' },
       });
 
@@ -241,7 +241,7 @@ appointmentsRouter.post(
   async (req: Request, res: Response, next: NextFunction) => {
     try {
       const appointment = await prisma.appointment.update({
-        where: { id: req.params.id },
+        where: { id: req.params.id as string },
         data: { status: AppointmentStatus.COMPLETED },
       });
       res.json(appointment);
@@ -257,7 +257,7 @@ appointmentsRouter.post(
   async (req: Request, res: Response, next: NextFunction) => {
     try {
       const appointment = await prisma.appointment.update({
-        where: { id: req.params.id },
+        where: { id: req.params.id as string },
         data: { status: AppointmentStatus.NO_SHOW },
       });
       res.json(appointment);

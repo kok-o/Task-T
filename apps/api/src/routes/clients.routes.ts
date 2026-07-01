@@ -44,7 +44,7 @@ clientsRouter.get('/', async (req, res, next) => {
 clientsRouter.get('/:id', async (req, res, next) => {
   try {
     const client = await prisma.client.findUnique({
-      where: { id: req.params.id },
+      where: { id: req.params.id as string },
       include: {
         appointments: {
           include: { master: true, service: true },
@@ -116,7 +116,7 @@ clientsRouter.patch(
       const data = clientSchema.partial().parse(req.body);
       try {
         const client = await prisma.client.update({
-          where: { id: req.params.id },
+          where: { id: req.params.id as string },
           data,
         });
         res.json(client);

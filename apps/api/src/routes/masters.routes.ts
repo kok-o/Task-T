@@ -51,7 +51,7 @@ mastersRouter.get('/', async (_req, res, next) => {
 mastersRouter.get('/:id', async (req, res, next) => {
   try {
     const master = await prisma.master.findUnique({
-      where: { id: req.params.id },
+      where: { id: req.params.id as string },
       include: { workSchedules: true, dayOffs: { orderBy: { date: 'asc' } } },
     });
     if (!master) throw new AppError(404, 'Master not found');
@@ -114,7 +114,7 @@ mastersRouter.patch(
       // Note: Updating email/password for existing master is complex (might not have a user yet).
       // For MVP, we'll only update master fields here.
       const master = await prisma.master.update({
-        where: { id: req.params.id },
+        where: { id: req.params.id as string },
         data: masterData,
       });
       res.json(master);
@@ -131,7 +131,7 @@ mastersRouter.delete(
   async (req: Request, res: Response, next: NextFunction) => {
     try {
       await prisma.master.update({
-        where: { id: req.params.id },
+        where: { id: req.params.id as string },
         data: { isActive: false },
       });
       res.json({ message: 'Master deactivated' });
@@ -145,7 +145,7 @@ mastersRouter.delete(
 mastersRouter.get('/:id/schedule', async (req, res, next) => {
   try {
     const schedules = await prisma.workSchedule.findMany({
-      where: { masterId: req.params.id },
+      where: { masterId: req.params.id as string },
       orderBy: { dayOfWeek: 'asc' },
     });
     res.json(schedules);
@@ -161,7 +161,7 @@ mastersRouter.put(
   async (req: Request, res: Response, next: NextFunction) => {
     try {
       const data = scheduleSchema.parse(req.body);
-      const masterId = req.params.id;
+      const masterId = req.params.id as string;
 
       // Upsert each day
       const schedules = await prisma.$transaction(
@@ -195,7 +195,7 @@ mastersRouter.post(
         .parse(req.body);
 
       const dayOff = await prisma.dayOff.create({
-        data: { masterId: req.params.id, date: new Date(date), reason },
+        data: { masterId: req.params.id as string, date: new Date(date), reason },
       });
       res.status(201).json(dayOff);
     } catch (err) {
@@ -210,7 +210,7 @@ mastersRouter.delete(
   authorize(Role.OWNER),
   async (req: Request, res: Response, next: NextFunction) => {
     try {
-      await prisma.dayOff.delete({ where: { id: req.params.dayOffId } });
+      await prisma.dayOff.delete({ where: { id: req.params.dayOffId as string } });
       res.json({ message: 'Day off removed' });
     } catch (err) {
       next(err);
@@ -225,7 +225,7 @@ mastersRouter.get('/:id/slots', async (req, res, next) => {
       .object({ date: z.string().date(), serviceId: z.string().uuid() })
       .parse(req.query);
 
-    const slots = await getAvailableSlots(req.params.id, date, serviceId);
+    const slots = await getAvailableSlots(req.params.id as string, date, serviceId);
     res.json(slots);
   } catch (err) {
     next(err);

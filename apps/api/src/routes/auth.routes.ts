@@ -28,14 +28,14 @@ authRouter.post(
 
       const accessToken = jwt.sign(
         { userId: user.id, role: user.role },
-        process.env.JWT_ACCESS_SECRET!,
-        { expiresIn: process.env.JWT_ACCESS_EXPIRES_IN || '15m' }
+        process.env.JWT_ACCESS_SECRET || 'secret',
+        { expiresIn: (process.env.JWT_ACCESS_EXPIRES_IN || '15m') as any }
       );
 
       const refreshToken = jwt.sign(
         { userId: user.id, role: user.role },
-        process.env.JWT_REFRESH_SECRET!,
-        { expiresIn: process.env.JWT_REFRESH_EXPIRES_IN || '7d' }
+        process.env.JWT_REFRESH_SECRET || 'secret',
+        { expiresIn: (process.env.JWT_REFRESH_EXPIRES_IN || '7d') as any }
       );
 
       const expiresAt = new Date();
@@ -81,8 +81,8 @@ authRouter.post(
 
       const accessToken = jwt.sign(
         { userId: payload.userId, role: payload.role },
-        process.env.JWT_ACCESS_SECRET!,
-        { expiresIn: process.env.JWT_ACCESS_EXPIRES_IN || '15m' }
+        process.env.JWT_ACCESS_SECRET || 'secret',
+        { expiresIn: (process.env.JWT_ACCESS_EXPIRES_IN || '15m') as any }
       );
 
       res.json({ accessToken });

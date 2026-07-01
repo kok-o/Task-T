@@ -52,7 +52,7 @@ servicesRouter.patch(
     try {
       const data = serviceSchema.partial().parse(req.body);
       const service = await prisma.service.update({
-        where: { id: req.params.id },
+        where: { id: req.params.id as string },
         data,
       });
       res.json(service);
@@ -69,7 +69,7 @@ servicesRouter.delete(
   async (req: Request, res: Response, next: NextFunction) => {
     try {
       await prisma.service.update({
-        where: { id: req.params.id },
+        where: { id: req.params.id as string },
         data: { isActive: false },
       });
       res.json({ message: 'Service deactivated' });
