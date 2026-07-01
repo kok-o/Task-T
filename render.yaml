@@ -44,4 +44,4 @@ services:
         destination: /index.html
     envVars:
       - key: VITE_API_URL
-        value: "https://nail-studio-api.onrender.com/api/v1"
+        value: "https://nail-studio-api-p44f.onrender.com/api/v1"
